@@ -210,7 +210,7 @@ def wordnet_path_similarity(word1, word2):
                     max_sim = sim
     return max_sim
 
-def harmonic_mean2(x, y):
+def harmonic_mean(x, y):
     """
     Compute the harmonic mean of two numbers.
 
