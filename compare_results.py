@@ -54,7 +54,7 @@ def compute_best_results(best_model_name: str, best_model):
         # Calculate Pearson correlation
         pearson_corr, _ = pearsonr(predictions, gold_scores)
 
-        # Normalize predictions and calculate normalized Pearson correlation
+        # Normalize predictions and calculate normalized Pearson correlation (canviar codi!!)
         normalized_predictions = (predictions - predictions.mean()) / predictions.std()
         normalized_gold_scores = (gold_scores - gold_scores.mean()) / gold_scores.std()
         normalized_pearson_corr, _ = pearsonr(normalized_predictions, normalized_gold_scores)
