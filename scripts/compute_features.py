@@ -44,8 +44,6 @@ def compute_features(data, stopwords, nltk, wn, ic, word_freq, total_freq):
     # Lexical Substitution System Feature
     features['lexical_substitution_system'] = data.apply(lambda row: similarity_lemmas(row['lemmas_with_disambiguation_0'], row['lemmas_with_disambiguation_1']), axis=1)
 
-    # Weighted Word Overlap (TakeLab)
-    features['weighted_word_overlap'] = data.apply(lambda row: weighted_word_overlap(row["lemmas_0"], row["lemmas_1"], word_freq, total_freq), axis=1)
 
     # ============================
     # Syntactic Features
@@ -62,6 +60,9 @@ def compute_features(data, stopwords, nltk, wn, ic, word_freq, total_freq):
 
     # Variant WordNet-Augmented Word Overlap (TakeLab)
     features['wordnet_augmented_word_overlap'] = data.apply(lambda row: wordnet_augmented_word_overlap(row["lemmas_0"], row["lemmas_1"], wn), axis=1)
+
+    # Weighted Word Overlap (TakeLab)
+    features['weighted_word_overlap'] = data.apply(lambda row: weighted_word_overlap(row["lemmas_0"], row["lemmas_1"], word_freq, total_freq), axis=1)
 
     # POS tag Ngram Overlap (TakeLab)
     features['pos_2_ngram_overlap'] = data.apply(lambda row: calculate_pos_ngram_overlap(row["lemmas_0"], row["lemmas_1"], nltk, 2), axis=1)
