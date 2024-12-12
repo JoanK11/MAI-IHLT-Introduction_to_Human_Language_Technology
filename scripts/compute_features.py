@@ -54,8 +54,8 @@ def compute_features(data, stopwords, nltk, wn, ic, word_freq, total_freq):
 
     # WordNet-Augmented Word Overlap (TakeLab)
     features['wordnet_augmented_overlap'] = data.apply(lambda row: harmonic_mean(
-        P_WN([w for w in row["lemmas_0"] if w not in stopwords], [w for w in row["lemmas_1"] if w not in stopwords], wn),
-        P_WN([w for w in row["lemmas_1"] if w not in stopwords], [w for w in row["lemmas_0"] if w not in stopwords], wn)
+        compute_wordnet_overlap_external([w for w in row["lemmas_0"] if w not in stopwords], [w for w in row["lemmas_1"] if w not in stopwords], wn),
+        compute_wordnet_overlap_external([w for w in row["lemmas_1"] if w not in stopwords], [w for w in row["lemmas_0"] if w not in stopwords], wn)
     ), axis=1)
 
     # Variant WordNet-Augmented Word Overlap (TakeLab)
