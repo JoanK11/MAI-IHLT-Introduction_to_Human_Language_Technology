@@ -15,7 +15,7 @@ def compute_features(data, stopwords, nltk, wn, ic, word_freq, total_freq):
     # Similarity Features
     features['longest_common_substring'] = data.apply(lambda row: longest_common_substring(row["sentence_lemmas_0"], row["sentence_lemmas_1"]), axis=1)
     features['longest_common_subsequence'] = data.apply(lambda row: longest_common_subsequence(row["sentence_lemmas_0"], row["sentence_lemmas_1"]), axis=1)
-    features['greedy_string_tiling'] = data.apply(lambda row: optimized_gst(row["sentence_lemmas_0"], row["sentence_lemmas_1"], min_match_length=1), axis=1)
+    features['greedy_string_tiling'] = data.apply(lambda row: greedy_string_tiling(row["sentence_lemmas_0"], row["sentence_lemmas_1"], min_match_length=1), axis=1)
 
     # Character n-gram Similarity Features
     features['2_gram_char'] = data.apply(lambda row: similarity_char_ngrams(row["lemmas_0"], row["lemmas_1"], 2), axis=1)

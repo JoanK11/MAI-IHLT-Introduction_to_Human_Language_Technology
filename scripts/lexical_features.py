@@ -7,16 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 # +------------------------------------------+
 
 def longest_common_substring(sentence_0, sentence_1):
-    """
-    Compute the length of the longest common substring between two sequences of tokens.
 
-    Parameters:
-        sentence_0 (list): List of tokens from the first sentence.
-        sentence_1 (list): List of tokens from the second sentence.
-
-    Returns:
-        int: The length of the longest common substring found.
-    """
     m, n = len(sentence_0), len(sentence_1)
 
     dp = [[0] * (n + 1) for _ in range(m + 1)]
@@ -39,16 +30,7 @@ def longest_common_substring(sentence_0, sentence_1):
 # +------------------------------------------+
 
 def longest_common_subsequence(sentence_0, sentence_1):
-    """
-    Compute the length of the longest common subsequence (LCS) between two sequences of tokens.
 
-    Parameters:
-        sentence_0 (list): List of tokens from the first sentence.
-        sentence_1 (list): List of tokens from the second sentence.
-
-    Returns:
-        int: The length of the longest common subsequence found.
-    """
     m, n = len(sentence_0), len(sentence_1)
 
     dp = [[0] * (n + 1) for _ in range(m + 1)]
@@ -68,97 +50,43 @@ def longest_common_subsequence(sentence_0, sentence_1):
 # |     (UKP) Greedy String Tiling           |
 # +------------------------------------------+
 
-def optimized_gst(tokens1, tokens2, min_match_length=3):
-    """
-    Compute the longest matched substring between two token sequences using a Greedy String Tiling (GST) approach.
+def greedy_string_tiling(tokens1, tokens2, min_match_length=3):
 
-    Parameters:
-        tokens1 (list): List of tokens from the first sequence.
-        tokens2 (list): List of tokens from the second sequence.
-        min_match_length (int): The minimum length of a match to be considered as a tile.
-
-    Returns:
-        int: The length of the longest tile (contiguous match) found between the two token sequences.
-    """
-
-    def karp_rabin_hash(s, length):
-        # Compute the rolling hash for a substring s of given length using base/mod.
-        base, mod = 257, 10**9 + 7
-        h = 0
-        for i in range(length):
-            h = (h * base + ord(s[i])) % mod
-        return h, base, mod
-
-    def find_maximal_matches(t1, t2, min_length, marked1, marked2):
-        # Find all maximal matches of at least min_length length that are not yet marked.
-        matches = []
-        n1, n2 = len(t1), len(t2)
-        hashes2 = {}
-
-        # Precompute hashes for t2 substrings of length min_length and store their start indices.
-        for i in range(n2 - min_length + 1):
-            if any(marked2[i:i + min_length]):
-                continue
-            substring = "".join(t2[i:i + min_length])
-            h, _, _ = karp_rabin_hash(substring, min_length)
-            if h not in hashes2:
-                hashes2[h] = []
-            hashes2[h].append(i)
-
-        # For each t1 substring of length min_length, check if there's a match in t2 using the stored hashes.
-        for i in range(n1 - min_length + 1):
-            if any(marked1[i:i + min_length]):
-                continue
-            substring = "".join(t1[i:i + min_length])
-            h, _, _ = karp_rabin_hash(substring, min_length)
-            if h in hashes2:
-                for j in hashes2[h]:
-                    match_length = 0
-                    # Extend the match as long as tokens continue to match and are unmarked.
-                    while (
-                        i + match_length < n1 and
-                        j + match_length < n2 and
-                        t1[i + match_length] == t2[j + match_length] and
-                        not marked1[i + match_length] and
-                        not marked2[j + match_length]
-                    ):
-                        match_length += 1
-                    if match_length >= min_length:
-                        matches.append((i, j, match_length))
-
-        # Sort matches by decreasing length so that we pick the longest matches first.
-        return sorted(matches, key=lambda x: -x[2])
-
-    def mark_tiles(matches, marked1, marked2):
-        # Mark the tokens covered by the newly found tiles so they won't be reused.
-        tiles = []
-        for i, j, length in matches:
-            if not any(marked1[i:i + length]) and not any(marked2[j:j + length]):
-                tiles.append((i, j, length))
-                for k in range(length):
-                    marked1[i + k] = True
-                    marked2[j + k] = True
-        return tiles
-
-    marked1 = [False] * len(tokens1)
-    marked2 = [False] * len(tokens2)
-    tiles = []
-
-    # Repeatedly find matches and mark them until no more can be found.
+    matched = []
+    used1 = [False] * len(tokens1)
+    used2 = [False] * len(tokens2)
+    
     while True:
-        matches = find_maximal_matches(tokens1, tokens2, min_match_length, marked1, marked2)
-        if not matches:
+        max_match_length = 0
+        max_match = None
+        
+        for i in range(len(tokens1)):
+            if used1[i]:
+                continue
+            for j in range(len(tokens2)):
+                if used2[j]:
+                    continue
+                
+                length = 0
+                while (i + length < len(tokens1) and j + length < len(tokens2) and
+                       tokens1[i + length] == tokens2[j + length] and
+                       not used1[i + length] and not used2[j + length]):
+                    length += 1
+                
+                if length >= min_match_length and length > max_match_length:
+                    max_match_length = length
+                    max_match = (i, j, length)
+        
+        if max_match is None:
             break
-        new_tiles = mark_tiles(matches, marked1, marked2)
-        tiles.extend(new_tiles)
-        # Decrease min_match_length to try finding shorter matches after the longest ones are found.
-        if min_match_length > 1:
-            min_match_length -= 1
-
-    # Return the length of the longest tile found.
-    max_tile_length = max((tile[2] for tile in tiles), default=0)
-
-    return max_tile_length
+        
+        i, j, length = max_match
+        for k in range(length):
+            used1[i + k] = True
+            used2[j + k] = True
+        matched.append((i, j, length))
+    
+    return len(matched)
 
 
 def generate_char_ngrams(tokens, n, nltk):
