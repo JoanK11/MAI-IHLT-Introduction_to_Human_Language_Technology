@@ -164,3 +164,104 @@ def plot_pearson_comparison(pearson_results, competition_averages, title="Model 
 
     plt.tight_layout()
     return fig, ax
+
+def plot_pearson_comparison2(
+    pearson_results_mixed, pearson_corr_mixed,
+    pearson_results_syntactic, pearson_corr_syntactic,
+    pearson_results_lexical, pearson_corr_lexical,
+    title="Model Dimensions Comparison"
+):
+    """
+    Plots a grouped bar chart comparing Pearson correlations for multiple models.
+    
+    Parameters:
+        pearson_results_mixed (dict): Dictionary of dataset_name: Pearson correlation for the Mixed Model.
+        pearson_corr_mixed (float): Mean Pearson correlation for the Mixed Model on the test set.
+        pearson_results_syntactic (dict): Dictionary of dataset_name: Pearson correlation for the Syntactic Model.
+        pearson_corr_syntactic (float): Mean Pearson correlation for the Syntactic Model on the test set.
+        pearson_results_lexical (dict): Dictionary of dataset_name: Pearson correlation for the Lexical Model.
+        pearson_corr_lexical (float): Mean Pearson correlation for the Lexical Model on the test set.
+        title (str): Title of the plot.
+    
+    Returns:
+        fig, ax: The matplotlib figure and axes objects for further customization or saving.
+    """
+    # Define models and their corresponding scores
+    models = ['Mixed Model', 'Syntactic Model', 'Lexical Model']
+    pearson_scores = {
+        'Mixed Model': pearson_results_mixed,
+        'Syntactic Model': pearson_results_syntactic,
+        'Lexical Model': pearson_results_lexical
+    }
+    pearson_corr_test = {
+        'Mixed Model': pearson_corr_mixed,
+        'Syntactic Model': pearson_corr_syntactic,
+        'Lexical Model': pearson_corr_lexical
+    }
+    
+    # Extract dataset names
+    dataset_names = list(pearson_results_mixed.keys())
+    
+    # Create groups: 'ALL' and each dataset
+    groups = ['ALL'] + dataset_names
+    n_groups = len(groups)
+    
+    # Number of models
+    num_models = len(models)
+    
+    # Define bar width and positions
+    width = 0.2
+    x = np.arange(n_groups)
+    
+    # Calculate offsets for each model
+    offsets = np.linspace(-width, width, num_models)
+    
+    # Get the tab10 color palette
+    cmap = plt.get_cmap('tab10')
+    colors = [cmap(i) for i in range(num_models)]
+    
+    # Initialize the plot
+    fig, ax = plt.subplots(figsize=(16, 9))
+    
+    # Plot 'ALL' group (test set mean Pearson correlations)
+    for i, model in enumerate(models):
+        score = pearson_corr_test[model]
+        ax.bar(x[0] + offsets[i], score, width, label=model if i == 0 else "", color=colors[i])
+        ax.annotate(f'{score:.2f}',
+                    xy=(x[0] + offsets[i], score),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom')
+    
+    # Plot each dataset group (per-dataset Pearson correlations)
+    for idx, ds in enumerate(dataset_names):
+        group_idx = idx + 1  # Offset by 1 because 'ALL' is the first group
+        for i, model in enumerate(models):
+            score = pearson_scores[model].get(ds, 0)
+            ax.bar(x[group_idx] + offsets[i], score, width, label=model if (idx == 0 and i == 0) else "", color=colors[i])
+            ax.annotate(f'{score:.2f}',
+                        xy=(x[group_idx] + offsets[i], score),
+                        xytext=(0, 3),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom')
+    
+    # Set labels and title
+    ax.set_ylabel('Pearson Correlation')
+    ax.set_title(title, fontsize=16)
+    ax.set_xticks(x)
+    ax.set_xticklabels(groups, rotation=45, ha='right', fontsize=12)
+    
+    # Create custom legend
+    handles = [
+        plt.Rectangle((0,0),1,1, color=colors[0]),
+        plt.Rectangle((0,0),1,1, color=colors[1]),
+        plt.Rectangle((0,0),1,1, color=colors[2])
+    ]
+    labels = models
+    ax.legend(handles, labels, fontsize=12)
+    
+    # Adjust layout and display
+    plt.tight_layout()
+    plt.show()
+    
+    return fig, ax
