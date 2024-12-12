@@ -1,31 +1,3 @@
-def replace_contractions(tokens):
-  """
-  Replace specified contractions in a list of tokens, as specified by TakeLab.
-
-  Parameters:
-    tokens (list): The list of tokens to process.
-
-  Returns:
-    list: The list of tokens after replacing the specified contractions.
-  """
-  contractions_dict = {
-      "n’t": "not", "n't": "not",
-      "’m": "am", "'m": "am",
-      "’ve": "have", "'ve": "have",
-      "’re": "are", "'re": "are",
-      "’ll": "will", "'ll": "will",
-  }
-  
-  new_tokens = []
-  for t in tokens:
-      lower_t = t.lower()
-      if lower_t in contractions_dict:
-          new_tokens.append(contractions_dict[lower_t])
-      else:
-          new_tokens.append(t)
-  return new_tokens
-
-
 # Function to lemmatize based on POS tagging
 def lemmatize_WNL(p, wnl, warn=False):
   d = {'NN': 'n', 'NNS': 'n',

@@ -2,59 +2,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-def compare_results(df, best_results):
-    """
-    Process the input CSV file, add the new result, and recalculate ranks.
-    
-    Args:
-        df (pd.Dataframe): Dataframe containing the CSV file with the official results.
-        best_results (dict): Dictionary containing the new result to be added.
-    
-    Returns:
-        pd.DataFrame: Processed DataFrame with new results and ranks.
-    """
-    # Convert the best results to a DataFrame
-    new_row = pd.DataFrame([best_results])
-    
-    # Combine the existing DataFrame with the new row
-    df = pd.concat([df, new_row], ignore_index=True)
-    
-    # Function to calculate ranks for a specific column
-    def calculate_ranks(column):
-        # Sort the column in descending order (higher is better)
-        return df[column].rank(method='dense', ascending=False).astype(int)
-    
-    # Calculate ranks for ALL, ALLnrm, and Mean
-    df['Rank_ALL'] = calculate_ranks('ALL')
-    df['Rank_ALLnrm'] = calculate_ranks('ALLnrm')
-    df['Rank_Mean'] = calculate_ranks('Mean')
-    
-    # Find rows with specific runs
-    baseline_row = df[df['Run'] == '00-baseline/task6-baseline']
-    our_model_row = df[df['Run'] == 'our_model']
-    
-    # Filter for rows where Rank_ALL is between 1 and 10
-    top_10_df = df[df['Rank_ALL'].between(1, 10)]
-    
-    # Combine top 10 with baseline and our model rows
-    # First, concatenate all rows
-    combined_rows = pd.concat([
-        top_10_df, 
-        baseline_row, 
-        our_model_row
-    ])
-    
-    # Remove duplicates, keeping the first occurrence
-    final_df = combined_rows.drop_duplicates(subset='Run', keep='first')
-    
-    # Sort by Rank_ALL to ensure consistent order
-    final_df = final_df.sort_values('Rank_ALL')
-    
-    # Reset index and drop the index column to remove numerical index
-    final_df = final_df.reset_index(drop=True)
-    
-    return final_df
-
 def compare_results_extended(df, best_results):
     """
     Process the input CSV file, add the new result, and recalculate ranks.
@@ -115,6 +62,7 @@ def compare_results_extended(df, best_results):
     
     return final_df
 
+
 def plot_pearson_comparison(pearson_results, competition_averages, title="Model vs Competition Average Pearson Correlation"):
     """
     Plots a grouped bar chart comparing Pearson correlations for a model and competition averages.
@@ -164,6 +112,7 @@ def plot_pearson_comparison(pearson_results, competition_averages, title="Model 
 
     plt.tight_layout()
     return fig, ax
+
 
 def plot_pearson_comparison2(
     pearson_results_mixed, pearson_corr_mixed,
