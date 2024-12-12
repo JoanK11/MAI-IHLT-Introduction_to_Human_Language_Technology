@@ -1,5 +1,6 @@
-import numpy as np
-from nltk.corpus import wordnet as wn
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
 
 # +------------------------------------------+
 # |      (UKP) Longest Common Substring      |
@@ -63,6 +64,10 @@ def longest_common_subsequence(sentence_0, sentence_1):
 
     return lcs_length
 
+# +------------------------------------------+
+# |     (UKP) Greedy String Tiling           |
+# +------------------------------------------+
+
 def optimized_gst(tokens1, tokens2, min_match_length=3):
     """
     Compute the longest matched substring between two token sequences using a Greedy String Tiling (GST) approach.
@@ -95,7 +100,7 @@ def optimized_gst(tokens1, tokens2, min_match_length=3):
             if any(marked2[i:i + min_length]):
                 continue
             substring = "".join(t2[i:i + min_length])
-            h, base, mod = karp_rabin_hash(substring, min_length)
+            h, _, _ = karp_rabin_hash(substring, min_length)
             if h not in hashes2:
                 hashes2[h] = []
             hashes2[h].append(i)
@@ -105,7 +110,7 @@ def optimized_gst(tokens1, tokens2, min_match_length=3):
             if any(marked1[i:i + min_length]):
                 continue
             substring = "".join(t1[i:i + min_length])
-            h, base, mod = karp_rabin_hash(substring, min_length)
+            h, _, _ = karp_rabin_hash(substring, min_length)
             if h in hashes2:
                 for j in hashes2[h]:
                     match_length = 0
@@ -155,73 +160,109 @@ def optimized_gst(tokens1, tokens2, min_match_length=3):
 
     return max_tile_length
 
+
+def generate_char_ngrams(tokens, n, nltk):
+    merged_string = ''.join(tokens)
+    char_ngrams = list(nltk.ngrams(merged_string, n))
+    ngram_list = [''.join(gram) for gram in char_ngrams]
+
+    return ' '.join(ngram_list)
+
+def similarity_char_ngrams(tokens_0, tokens_1, n_value):
+    ngrams_tokens_0 = generate_char_ngrams(tokens_0, n_value)
+    ngrams_tokens_1 = generate_char_ngrams(tokens_1, n_value)
+
+    vectorizer = CountVectorizer().fit([ngrams_tokens_0, ngrams_tokens_1])
+    vectors = vectorizer.transform([ngrams_tokens_0, ngrams_tokens_1])
+
+    similarity = cosine_similarity(vectors[0], vectors[1])[0][0]
+
+    return similarity
+
+def generate_word_ngrams(tokens, n, nltk):
+    word_ngrams = list(nltk.ngrams(tokens, n))
+    return set(word_ngrams)
+
+def compute_containment(set_a, set_b):
+    intersection = set_a.intersection(set_b)
+    containment = len(intersection) / len(set_a)
+    return containment
+
+def similarity_words_ngrams_jaccard(tokens_0, tokens_1, n_value, nltk, stopwords=None):
+
+    if stopwords is not None:
+      tokens_0 = [token for token in tokens_0 if token not in stopwords]
+      tokens_1 = [token for token in tokens_1 if token not in stopwords]
+
+    if len(tokens_0) == 0 or len(tokens_1) == 0 or (len(tokens_0) < n_value and len(tokens_1) < n_value):
+      return 0.0
+
+    ngrams_tokens_0 = generate_word_ngrams(tokens_0, n_value, nltk)
+    ngrams_tokens_1 = generate_word_ngrams(tokens_1, n_value, nltk)
+
+    similarity = 1 - nltk.metrics.distance.jaccard_distance(ngrams_tokens_0, ngrams_tokens_1)
+
+    return similarity
+
+def similarity_words_ngrams_containment(tokens_0, tokens_1, n_value, stopwords=None):
+
+    if stopwords is not None:
+      tokens_0 = [token for token in tokens_0 if token not in stopwords]
+      tokens_1 = [token for token in tokens_1 if token not in stopwords]
+
+    if len(tokens_0) == 0 or len(tokens_1) == 0:
+      return 0.0
+
+    ngrams_tokens_0 = generate_word_ngrams(tokens_0, n_value)
+    ngrams_tokens_1 = generate_word_ngrams(tokens_1, n_value)
+
+    if len(ngrams_tokens_0) == 0:
+      return 0.0
+    similarity = compute_containment(ngrams_tokens_0, ngrams_tokens_1)
+
+    return similarity
+
+
 # +------------------------------------------+
-# | (TakeLab) WordNet-Augmented Word Overlap |
+# | (UKP) WordNet's Wu-Palmer similarity     |
 # +------------------------------------------+
 
-def P_WN(S1, S2):
-    """
-    Compute P_WN(S1, S2) metric as described in the TakeLab paper.
+def calculate_similarity(word_1, word_2, wn):
+    word1_synsets = wn.synsets(word_1)
+    word2_synsets = wn.synsets(word_2)
+    highest_similarity = 0.0
+    for syn1 in word1_synsets:
+        for syn2 in word2_synsets:
+            similarity_score = syn1.wup_similarity(syn2)
+            if similarity_score and similarity_score > highest_similarity:
+                highest_similarity = similarity_score
+    return highest_similarity
 
-    Parameters:
-        S1 (list): List of tokenized words from the first sentence.
-        S2 (list): List of tokenized words from the second sentence.
+def average_similarity(tokens_0, tokens_1):
+    total_similarity = 0.0
+    word_count = 0
+    for token_0 in tokens_0:
+        best_match_similarity = 0.0
+        for token_1 in tokens_1:
+            similarity = calculate_similarity(token_0, token_1)
+            if similarity and similarity > best_match_similarity:
+                best_match_similarity = similarity
+        total_similarity += best_match_similarity
+        word_count += 1
+    return total_similarity / word_count if word_count > 0 else 0.0
 
-    Returns:
-        float: The computed P_WN(S1, S2) value.
-    """
-    if len(S1) == 0:
-        return 0.0
+# +------------------------------------------+
+# | (UKP) Simmilarity Function               |
+# +------------------------------------------+
 
-    score = 0.0
-    S2_set = set(S2) # Slight optimization for membership checks
-    for word1 in S1:
-        if word1 in S2_set:
-            score += 1.0
-        else:
-            # Find the best similarity if exact match is not found
-            best_sim = max((wordnet_path_similarity(word1, word2) for word2 in S2), default=0.0)
-            score += best_sim
+def similarity_lemmas(tokens_0, tokens_1):
 
-    return score / len(S1)
+    text_0 = ' '.join(tokens_0)
+    text_1 = ' '.join(tokens_1)
 
-def wordnet_path_similarity(word1, word2):
-    """
-    Compute the maximum WordNet path similarity between all synset pairs of two given words.
-    Only consider synsets that share the same part-of-speech (POS).
+    vectorizer = CountVectorizer().fit([text_0, text_1])
+    vectors = vectorizer.transform([text_0, text_1])
 
-    Parameters:
-        word1 (str): First word.
-        word2 (str): Second word.
+    similarity = cosine_similarity(vectors[0], vectors[1])[0][0]
 
-    Returns:
-        float: Maximum path similarity between word1 and word2.
-    """
-    synsets1 = wn.synsets(word1)
-    synsets2 = wn.synsets(word2)
-
-    # Consider only pairs with matching POS, and take the maximum similarity
-    max_sim = 0.0
-    for s1 in synsets1:
-        for s2 in synsets2:
-            if s1.pos() == s2.pos():
-                sim = s1.path_similarity(s2)
-                if sim is not None and sim > max_sim:
-                    max_sim = sim
-    return max_sim
-
-def harmonic_mean(x, y):
-    """
-    Compute the harmonic mean of two numbers.
-
-    Parameters:
-        x (float): First number.
-        y (float): Second number.
-
-    Returns:
-        float: The harmonic mean of the two numbers.
-    """
-    if (x + y) > 0:
-        return 2 * x * y / (x + y)
-    else:
-        return 0
+    return similarity
