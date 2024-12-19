@@ -63,7 +63,7 @@ def compare_results_extended(df, best_results):
     return final_df
 
 
-def plot_pearson_comparison(pearson_results, competition_averages, title="Model vs Competition Average Pearson Correlation"):
+def plot_pearson_comparison(pearson_results, competition_averages, title="Model vs Top 10 Competition Average Pearson Correlation"):
     """
     Plots a grouped bar chart comparing Pearson correlations for a model and competition averages.
 
